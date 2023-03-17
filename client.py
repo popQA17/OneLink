@@ -11,7 +11,9 @@ import platform
 import pyautogui
 #from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
  
-
+operating_system = platform.system()
+if operating_system == "Windows":
+    from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
 
 sio = socketio.Client()
 
@@ -26,7 +28,7 @@ def saveChanges(config):
 @sio.event
 def connect():
     print("[SERVER CONNECTED!]")
-    if not config['HOST_ID']:
+    if not config.get('HOST_ID'):
         while True: 
             success = False
             password = input("[CHOOSE A PASSWORD] >>> ")
@@ -71,11 +73,26 @@ def loggedIn(data):
         print("[HOST CONNECTION ESTABLISHED]")
         #pyautogui.alert(text='This computer is currently connected to the [HOST] network. Normal user privileges are given.', title='Connection Established', button='OK')
         while True:
+            os = platform.system()
             cpu = psutil.cpu_percent()
             mem =  psutil.virtual_memory()[2]
             locked = False
+            if os == 'Windows':
+                for proc in psutil.process_iter():
+                    if(proc.name() == "LogonUI.exe"):
+                        locked = True
             fdesktops = []
-            sio.emit('computerUpdate', {'cpu': cpu, 'mem': mem, 'locked': locked, 'desktops': fdesktops})
+            if os == 'Windows':
+                for desktop in get_virtual_desktops():
+                    #if desktop.id == VirtualDesktop.current().id:
+                    payload = {
+                        'id': desktop.id,
+                        'name': desktop.name,
+                        "active": desktop.id == VirtualDesktop.current().id
+                    }
+                    fdesktops.append(payload)
+            sio.emit('computerUpdate', {'cpu': cpu, 'mem': mem, 'locked': locked, 'desktops': fdesktops, 'id': config['HOST_ID'], 'os': os})
+            print("[INFO] HEARTBEAT SENT!")
             time.sleep(3)
     else:
         print("[LOGIN FAILED!]")
@@ -101,7 +118,7 @@ def evaluate(data):
             pyautogui.moveTo(mousePos[0], res, 0.5)
     def lock_device():
         #switchDesktop('Lockscreen')
-        os.system('python3 lock.py')
+        #os.system('python3 lock.py')
         #while True:
         #    record = False
         #    for x in pyautogui.getAllWindows():  
