@@ -5,8 +5,13 @@ import os
 import json
 import socket
 import platform
+from flask_socketio import SocketIO
+
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
 CORS(app)
+socketio = SocketIO(app, allowed_cors_origins = "*")
+
 app.config['CONFIG'] = {}
 
 print("[SERVER] [LOADING CONFIG FILE]")
@@ -26,6 +31,18 @@ except Exception as e:
 
 print("[SERVER] [SUCCESSFULLY LOADED CONFIG FILE]")
 
+def shutdown_server():
+    #func = request.environ.get('werkzeug.server.shutdown')
+    #if func is None:
+    #    raise RuntimeError('Not running with the Werkzeug Server')
+    #func()
+    print("== STOPPING SERVER == ")
+    socketio.stop()
+    
+@app.get('/shutdown')
+def shutdown():
+    shutdown_server()
+    return {"status": "Shutting down.."}
 
 @app.route("/")
 def index():
@@ -48,7 +65,9 @@ def setHost():
 
 
 def run():
-    app.run(port=21452)
+    print("[SERVER] STARTING SERVER!")
+    socketio.run(app, port=21452)
+    #app.run(port=21452)
 
 
 def keep_alive():

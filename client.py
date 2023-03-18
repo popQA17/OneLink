@@ -11,7 +11,6 @@ import webbrowser
 from multiprocessing import Process
 #from __future__ import print_function
 import pyautogui
-from server import keep_alive
 #from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
  
 p = None
@@ -26,7 +25,7 @@ print("[LOADING CONFIG FILE]")
 
 config = {}
 
-if not os.path.isfile(r'~\Documents\OneLinkData\config.json'):
+if not os.path.isfile(os.path.expanduser(r'~\Documents\OneLinkData\config.json')):
     with open(os.path.expanduser(r'~\Documents\OneLinkData\config.json'), 'w') as json_file:
         json.dump(example_config, json_file, indent=4)
 
@@ -79,6 +78,7 @@ def createdHost(data):
     saveChanges(config)
     sio.emit('login', {'type': 'HOST', 'id': config['HOST_ID'], "password": config['HOST_PASSWORD'], 'name': socket.gethostname()})
     print("[HOST CREATED! LOGGING IN..]")
+    
 @sio.event
 def connect_error(data):
     print("[CONNECTION TO SERVER FAILED. RETRYING]")
@@ -158,11 +158,14 @@ def evaluate(data):
         print(str(e))
         sio.emit('evaluated', {"content": data.get('content'), 'result': str(e), 'error': True})
 
+
+
 print("[ATTEMPTING TO CONNECT..]")
-time.sleep(5)
+from server import keep_alive
 keep_alive()
 p = Process(target=sio.connect(config['SERVER_URL'], wait_timeout = 10))
 p.run()
+
 #p.join()
 #sio.wait()
 
