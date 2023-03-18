@@ -6,48 +6,68 @@ import psutil
 import socket
 import json
 import platform
-
+from example import example_config
+import webbrowser
+from multiprocessing import Process
 #from __future__ import print_function
 import pyautogui
+from server import keep_alive
 #from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
  
+p = None
+
 operating_system = platform.system()
 if operating_system == "Windows":
     from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
 
 sio = socketio.Client()
 
+print("[LOADING CONFIG FILE]")
+
 config = {}
-with open('config.json', 'r') as f:
-  config = json.load(f)
+
+if not os.path.isfile(r'~\Documents\OneLinkData\config.json'):
+    with open(os.path.expanduser(r'~\Documents\OneLinkData\config.json'), 'w') as json_file:
+        json.dump(example_config, json_file, indent=4)
+
+try:
+    with open(os.path.expanduser(r'~\Documents\OneLinkData\config.json'), 'r') as f:
+        config = json.load(f)
+except Exception as e:
+    print(e)
+    exit()
+
+print("[SUCCESSFULLY LOADED CONFIG FILE]")
 
 def saveChanges(config):
-    with open('config.json', 'w') as json_file:
+    with open(os.path.expanduser(r'~\Documents\OneLinkData\config.json'), 'w') as json_file:
         json.dump(config, json_file, indent=4)
 
 @sio.event
 def connect():
     print("[SERVER CONNECTED!]")
     if not config.get('HOST_ID'):
-        while True: 
-            success = False
-            password = input("[CHOOSE A PASSWORD] >>> ")
-            while True:
-                confirmPassword = input("[CONFIRM PASSWORD] >>> ")
-                if confirmPassword.lower() == 'back':
-                    break
-                if password != confirmPassword:
-                    print("PASSWORDS DO NOT MATCH. TRY AGAIN (back to reset password)")
-                else:
-                    success = True
-                    os = platform.system()
-                    if os == "Darwin":
-                        os = "MacOS"
-                    sio.emit("createHost", {'password': password, 'os': os})
-                    break
-            if success:
-                break
-        print("[CREATING HOST ACCOUNT...]")
+        webbrowser.open('http://link.pop-plays.live/configure')
+        sio.disconnect()
+        #while True: 
+        #    success = False
+        #    password = input("[CHOOSE A PASSWORD] >>> ")
+        #    while True:
+        #        confirmPassword = input("[CONFIRM PASSWORD] >>> ")
+        #        if confirmPassword.lower() == 'back':
+        #            break
+        #        if password != confirmPassword:
+        #            print("PASSWORDS DO NOT MATCH. TRY AGAIN (back to reset password)")
+        #        else:
+        #            success = True
+        #            os = platform.system()
+        #            if os == "Darwin":
+        #                os = "MacOS"
+        #            sio.emit("createHost", {'password': password, 'os': os})
+        #            break
+        #    if success:
+        #        break
+        #print("[CREATING HOST ACCOUNT...]")
     else:
         print("[LOGGING IN TO SERVER]")
         sio.emit('login', {'type': 'HOST', 'id': config['HOST_ID'], "password": config['HOST_PASSWORD'], 'name': socket.gethostname()})
@@ -86,7 +106,7 @@ def loggedIn(data):
                 for desktop in get_virtual_desktops():
                     #if desktop.id == VirtualDesktop.current().id:
                     payload = {
-                        'id': desktop.id,
+                        #'id': desktop.id,
                         'name': desktop.name,
                         "active": desktop.id == VirtualDesktop.current().id
                     }
@@ -138,12 +158,11 @@ def evaluate(data):
         print(str(e))
         sio.emit('evaluated', {"content": data.get('content'), 'result': str(e), 'error': True})
 
+print("[ATTEMPTING TO CONNECT..]")
+time.sleep(5)
+keep_alive()
+p = Process(target=sio.connect(config['SERVER_URL'], wait_timeout = 10))
+p.run()
+#p.join()
+#sio.wait()
 
-sio.connect(config['SERVER_URL'], wait_timeout = 10)
-sio.wait()
-
-print("[HOST SHUT DOWN WRITING CONFIG CHANGES]")
-with open('config.json', 'w') as json_file:
-  json.dump(config, json_file, indent=4)
-print()
-print("CHANGES WRITTEN")
