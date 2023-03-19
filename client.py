@@ -3,10 +3,11 @@ import os
 import subprocess
 import time
 import psutil
+import ctypes, sys
 import socket
 import json
 import platform
-from example import example_config
+from example import example_config, example_startup_task
 import webbrowser
 from multiprocessing import Process
 #from __future__ import print_function
@@ -20,6 +21,12 @@ operating_system = platform.system()
 if operating_system == "Windows":
     from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
 
+def is_admin():
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
 sio = socketio.Client()
 
 print("[LOADING CONFIG FILE]")
@@ -30,12 +37,27 @@ if not os.path.isfile(r'~\Documents\OneLinkData\config.json'):
     with open(os.path.expanduser(r'~\Documents\OneLinkData\config.json'), 'w') as json_file:
         json.dump(example_config, json_file, indent=4)
 
+if not os.path.isfile(r'~\Documents\OneLinkData\OneLinkStartUpTask.xml'):
+    with open(os.path.expanduser(r'~\Documents\OneLinkData\OneLinkStartUpTask.xml'), 'w') as xml_file:
+        #json.dump(example_startup_task, xml_file, indent=4)
+        xml_file.write(example_startup_task)
+        #os.system("cd\ \ncacls c:/windows/tasks /T /E /P Administrators:F \ncacls c:/windows/tasks /T /E /P SYSTEM:F")
+
 try:
     with open(os.path.expanduser(r'~\Documents\OneLinkData\config.json'), 'r') as f:
         config = json.load(f)
 except Exception as e:
     print(e)
     exit()
+
+if not config.get("HOST_ID"):
+    if is_admin():
+        os.system(f"SCHTASKS /Create /XML {os.path.expanduser('~/Documents/OneLinkData/OneLinkStartUpTask.xml')} /TN OneLinkStartup /F")   
+    else:
+        # Re-run the program with admin rights
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+        exit()
+    pass
 
 print("[SUCCESSFULLY LOADED CONFIG FILE]")
 
