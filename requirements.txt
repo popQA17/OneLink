@@ -1,0 +1,8 @@
+python-socketio
+psutil
+pyautogui
+pyvda
+
+flask
+flask-socketio
+flask-cors
