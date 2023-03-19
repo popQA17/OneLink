@@ -36,7 +36,7 @@ if not os.path.isfile(os.path.expanduser(r'~\Documents\OneLinkData\config.json')
     with open(os.path.expanduser(r'~\Documents\OneLinkData\config.json'), 'w') as json_file:
         json.dump(example_config, json_file, indent=4)
 
-if not os.path.isfile(r'~\Documents\OneLinkData\OneLinkStartUpTask.xml'):
+if not os.path.isfile(r'~\Documents\OneLinkData\OneLinkStartUpTask.xml') and operating_system == "Windows":
     with open(os.path.expanduser(r'~\Documents\OneLinkData\OneLinkStartUpTask.xml'), 'w') as xml_file:
         #json.dump(example_startup_task, xml_file, indent=4)
         xml_file.write(example_startup_task)
@@ -49,7 +49,7 @@ except Exception as e:
     print(e)
     exit()
 
-if not config.get("HOST_ID"):
+if not config.get("HOST_ID") and operating_system == "Windows":
     if is_admin():
         os.system(f"SCHTASKS /Create /XML {os.path.expanduser('~/Documents/OneLinkData/OneLinkStartUpTask.xml')} /TN OneLinkStartup /F")   
     else:
