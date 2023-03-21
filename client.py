@@ -7,14 +7,43 @@ import ctypes, sys
 import socket
 import json
 import platform
+import base64
+from io import BytesIO
 from example import example_config, example_startup_task
 import webbrowser
+from PIL import Image
+
 from multiprocessing import Process
+#from PIL import Image
 #from __future__ import print_function
 import pyautogui
 #from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
  
 p = None
+saved_image = None
+mouse_image = Image.open('mouse.png')
+mouse_image.thumbnail((25, 25))
+
+def screenshot_screen(locked):
+    if not locked:
+        global saved_image
+        image = pyautogui.screenshot()
+        image.paste(mouse_image, pyautogui.position(), mouse_image)
+        x, y = image.size
+        if x > 50 and y > 50:
+            image = image.resize((round(x / 3), round(y / 3)))
+        #image.save("screenshot.jpg")2
+        image_bytes = BytesIO()
+        image.save(image_bytes, format='PNG')
+        image_bytes = image_bytes.getvalue()
+        img_str = base64.b64encode(image_bytes)
+        #image_bytes = image_bytes.getvalue()
+        #buffered = BytesIO()
+        #image.save(buffered, format="JPEG")
+        #img_str = base64.b64encode(buffered.getvalue())
+        #with open("screenshot.jpg", "rb") as f:
+        #    img_str = base64.b64encode(f.read())
+        saved_image = img_str
 
 operating_system = platform.system()
 if operating_system == "Windows":
@@ -133,9 +162,10 @@ def loggedIn(data):
                         "active": desktop.id == VirtualDesktop.current().id
                     }
                     fdesktops.append(payload)
-            sio.emit('computerUpdate', {'cpu': cpu, 'mem': mem, 'locked': locked, 'desktops': fdesktops, 'id': config['HOST_ID'], 'os': os})
-            print("[INFO] HEARTBEAT SENT!")
-            time.sleep(3)
+            sio.emit('computerUpdate', {'cpu': cpu, 'mem': mem, 'locked': locked, 'desktops': fdesktops, 'id': config['HOST_ID'], 'os': os, 'image': saved_image})
+            screenshot_screen(locked)
+            #print("[INFO] HEARTBEAT SENT!")
+            time.sleep(0.5)
     else:
         print("[LOGIN FAILED!]")
         return
