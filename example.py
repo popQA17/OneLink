@@ -2,7 +2,8 @@ import os
 example_config = {
     "SERVER_URL": "https://OneLinkAPIv1.popqa17.repl.co",
     "HOST_ID": "",
-    "HOST_PASSWORD": ""
+    "HOST_PASSWORD": "",
+    "DESKTOP_VIEW": False
 }
 
 example_startup_task = f"""<?xml version="1.0" encoding="UTF-16"?>

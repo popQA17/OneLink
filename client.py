@@ -205,10 +205,10 @@ def evaluate(data):
     try:
         result = eval(data.get('content'))
         #print(result)
-        sio.emit('evaluated', {"content": data.get('content'), 'result': result})
+        sio.emit('evaluated', {"content": data.get('content'), 'id': config['HOST_ID'], 'result': result})
     except Exception as e:
         print(str(e))
-        sio.emit('evaluated', {"content": data.get('content'), 'result': str(e), 'error': True})
+        sio.emit('evaluated', {"content": data.get('content'), 'id': config['HOST_ID'], 'result': str(e), 'error': True})
 
 
 
