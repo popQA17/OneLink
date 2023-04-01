@@ -163,9 +163,13 @@ def loggedIn(data):
                     }
                     fdesktops.append(payload)
             sio.emit('computerUpdate', {'cpu': cpu, 'mem': mem, 'locked': locked, 'desktops': fdesktops, 'id': config['HOST_ID'], 'os': os, 'image': saved_image})
-            screenshot_screen(locked)
+            if config.get("DESKTOP_VIEW"):
+                screenshot_screen(locked)
             #print("[INFO] HEARTBEAT SENT!")
-            time.sleep(0.5)
+            if config.get("DESKTOP_VIEW"):
+                time.sleep(0.5)
+            else:
+                time.sleep(3)
     else:
         print("[LOGIN FAILED!]")
         return
